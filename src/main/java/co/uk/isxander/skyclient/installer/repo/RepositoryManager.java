@@ -3,6 +3,8 @@ package co.uk.isxander.skyclient.installer.repo;
 import co.uk.isxander.skyclient.installer.SkyClient;
 import co.uk.isxander.skyclient.installer.repo.entry.ModEntry;
 import co.uk.isxander.skyclient.installer.repo.entry.PackEntry;
+import co.uk.isxander.skyclient.installer.utils.FileUtils;
+import co.uk.isxander.skyclient.installer.utils.UpdateHook;
 import co.uk.isxander.xanderlib.utils.HttpsUtils;
 import co.uk.isxander.xanderlib.utils.Multithreading;
 import co.uk.isxander.xanderlib.utils.json.BetterJsonObject;
@@ -39,111 +41,166 @@ public class RepositoryManager {
         this.packEntries = new ArrayList<>();
     }
 
-    public void fetchFiles(Runnable onIconUpdate) {
+    public void fetchFiles(UpdateHook hook) {
+        // check if we need to refresh icons and stuff
+        boolean refresh = shouldRefreshCache();
+        if (refresh) {
+            if (!CACHE_FOLDER.exists()) {
+                CACHE_FOLDER.mkdirs();
+            }
+        }
+
+        // get json from web
+        mods = JsonParser.parseString(HttpsUtils.getString(MODS_JSON_URL)).getAsJsonArray();
+        packs = JsonParser.parseString(HttpsUtils.getString(PACKS_JSON_URL)).getAsJsonArray();
+
+        // Export unknown image if needed
+        BufferedImage unknownImg = null;
+        try {
+            File iconFile = new File(CACHE_FOLDER, "icons/unknown.png");
+            if (!iconFile.exists()) {
+                FileUtils.exportResource("unknown.png", iconFile);
+            }
+            unknownImg = ImageIO.read(iconFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // Loop thru every element in the array
+        for (JsonElement element : mods) {
+            // Check if element is an object so we don't run into any weird errors
+            if (!element.isJsonObject()) {
+                SkyClient.LOGGER.warning("Mods JSON included non-json-object.");
+                continue;
+            }
+
+            // convert the element into a json object
+            BetterJsonObject modJson = new BetterJsonObject(element.getAsJsonObject());
+
+            // find all required packs and add them to array
+            int i = 0;
+            String[] packs = new String[0];
+            if (modJson.has("packs")) {
+                JsonArray packArray = modJson.get("packs").getAsJsonArray();
+                packs = new String[packArray.size()];
+                for (JsonElement packIdElement : packArray) {
+                    packs[i] = packIdElement.getAsString();
+                    i++;
+                }
+            }
+
+            // find all required mods and add them to array
+            String[] mods = new String[0];
+            if (modJson.has("mods")) {
+                JsonArray modArray = modJson.get("mods").getAsJsonArray();
+                mods = new String[modArray.size()];
+                i = 0;
+                for (JsonElement modIdElement : modArray) {
+                    mods[i] = modIdElement.getAsString();
+                    i++;
+                }
+            }
+
+            // find all required files and add them to array
+            String[] files = new String[0];
+            if (modJson.has("files")) {
+                JsonArray fileArray = modJson.get("files").getAsJsonArray();
+                files = new String[fileArray.size()];
+                i = 0;
+                for (JsonElement fileIdElement : fileArray) {
+                    files[i] = fileIdElement.getAsString();
+                    i++;
+                }
+            }
+
+            // finally create the entry
+            modEntries.add(new ModEntry(
+                    modJson.optString("id"),
+                    modJson.optBoolean("enabled", false),
+                    modJson.optString("file"),
+                    modJson.optString("url"),
+                    modJson.optString("display"),
+                    modJson.optString("description"),
+                    modJson.optString("icon"),
+                    unknownImg,
+                    modJson.optString("creator", "Unknown"),
+                    packs,
+                    mods,
+                    files,
+                    modJson.optBoolean("hidden", false)
+            ));
+        }
+
+        // loop thru the pack array
+        for (JsonElement element : packs) {
+            // check if element is object so we dont run into any weird errors
+            if (!element.isJsonObject()) {
+                SkyClient.LOGGER.warning("Packs JSON included non-json-object.");
+                continue;
+            }
+
+            // Convert element into object
+            BetterJsonObject packJson = new BetterJsonObject(element.getAsJsonObject());
+
+            // finally add pack entry
+            packEntries.add(new PackEntry(
+                    packJson.optString("id"),
+                    packJson.optBoolean("enabled", false),
+                    packJson.optString("file"),
+                    packJson.optString("url"),
+                    packJson.optString("display"),
+                    packJson.optString("description"),
+                    packJson.optString("icon"),
+                    unknownImg,
+                    packJson.optString("creator", "Unknown")
+            ));
+        }
+
+        // add to another thread to prevent the program from freezing
         Multithreading.runAsync(() -> {
-            boolean refresh = shouldRefreshCache();
-            if (refresh) {
-                if (!CACHE_FOLDER.exists()) {
-                    CACHE_FOLDER.mkdirs();
-                }
-            }
-
-            mods = JsonParser.parseString(HttpsUtils.getString(MODS_JSON_URL)).getAsJsonArray();
-            packs = JsonParser.parseString(HttpsUtils.getString(PACKS_JSON_URL)).getAsJsonArray();
-
-            BufferedImage unknownImg = null;
-            String iconFileName = "unknown.png";
-            try {
-                File iconFile = new File(CACHE_FOLDER, "icons/" + iconFileName);
-                if (!iconFile.exists() || refresh) {
-                    HttpsUtils.downloadFile(ICONS_DIR_URL + iconFileName, iconFile);
-                }
-                unknownImg = ImageIO.read(iconFile);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            for (JsonElement element : mods) {
-                if (!element.isJsonObject()) {
-                    SkyClient.LOGGER.warning("Mods JSON included non-json-object.");
+            // loop through all the mod entries we just made and download the icons from it
+            // do this after so we can have a list of all the mods as that is important
+            // then get the images async
+            for (ModEntry mod : modEntries) {
+                String iconFileName = mod.getIconFile();
+                try {
+                    // e.g. C:\Users\Xander\.skyclient\icons\neu.png
+                    File iconFile = new File(CACHE_FOLDER, "icons/" + iconFileName);
+                    // If the icon doesn't already exist or the cache has expired
+                    if (!iconFile.exists() || refresh) {
+                        HttpsUtils.downloadFile(ICONS_DIR_URL + iconFileName, iconFile);
+                    }
+                    mod.setIconImage(ImageIO.read(iconFile));
+                } catch (IOException e) {
+                    e.printStackTrace();
                     continue;
                 }
-                BetterJsonObject modJson = new BetterJsonObject(element.getAsJsonObject());
 
-                int i = 0;
-                String[] packs = new String[0];
-                if (modJson.has("packs")) {
-                    JsonArray packArray = modJson.get("packs").getAsJsonArray();
-                    packs = new String[packArray.size()];
-                    for (JsonElement packIdElement : packArray) {
-                        packs[i] = packIdElement.getAsString();
-                        i++;
-                    }
-                }
-
-                String[] mods = new String[0];
-                if (modJson.has("mods")) {
-                    JsonArray modArray = modJson.get("mods").getAsJsonArray();
-                    mods = new String[modArray.size()];
-                    i = 0;
-                    for (JsonElement modIdElement : modArray) {
-                        mods[i] = modIdElement.getAsString();
-                        i++;
-                    }
-                }
-
-                String[] files = new String[0];
-                if (modJson.has("files")) {
-                    JsonArray fileArray = modJson.get("files").getAsJsonArray();
-                    files = new String[fileArray.size()];
-                    i = 0;
-                    for (JsonElement fileIdElement : fileArray) {
-                        files[i] = fileIdElement.getAsString();
-                        i++;
-                    }
-                }
-
-
-                modEntries.add(new ModEntry(
-                        modJson.optString("id"),
-                        modJson.optBoolean("enabled", false),
-                        modJson.optString("file"),
-                        modJson.optString("url"),
-                        modJson.optString("display"),
-                        modJson.optString("description"),
-                        iconFileName,
-                        unknownImg,
-                        modJson.optString("creator", "Unknown"),
-                        packs,
-                        mods,
-                        files
-                ));
+                // this can be used to notify the gui that it needs to update
+                // the icon of a specified element. this reduces the work that needs to be done
+                hook.updateMod(mod);
             }
 
-            for (JsonElement element : packs) {
-                if (!element.isJsonObject()) {
-                    SkyClient.LOGGER.warning("Packs JSON included non-json-object.");
+            for (PackEntry pack : packEntries) {
+                String iconFileName = pack.getIconFile();
+                try {
+                    File iconFile = new File(CACHE_FOLDER, "icons/" + iconFileName);
+                    if (!iconFile.exists() || refresh) {
+                        HttpsUtils.downloadFile(ICONS_DIR_URL + iconFileName, iconFile);
+                    }
+                    pack.setIconImage(ImageIO.read(iconFile));
+                } catch (IOException e) {
+                    e.printStackTrace();
                     continue;
                 }
-                BetterJsonObject packJson = new BetterJsonObject(element.getAsJsonObject());
 
-                packEntries.add(new PackEntry(
-                        packJson.optString("id"),
-                        packJson.optBoolean("enabled", false),
-                        packJson.optString("file"),
-                        packJson.optString("url"),
-                        packJson.optString("display"),
-                        packJson.optString("description"),
-                        iconFileName,
-                        unknownImg,
-                        packJson.optString("creator", "Unknown")
-                ));
+                hook.updatePack(pack);
             }
         });
-
     }
 
     public boolean shouldRefreshCache() {
+        // if the cache folder doesnt exist or the cache was last modified over a day ago
         return !CACHE_FOLDER.exists() || CACHE_FOLDER.lastModified() < System.currentTimeMillis() - CACHE_TIME;
     }
 

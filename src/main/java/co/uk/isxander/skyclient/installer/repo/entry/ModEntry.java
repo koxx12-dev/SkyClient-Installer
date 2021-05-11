@@ -16,8 +16,9 @@ public class ModEntry {
     private final String[] packRequirements;
     private final String[] modRequirements;
     private final String[] files;
+    private final boolean hidden;
 
-    public ModEntry(String id, boolean enabled, String fileName, String downloadUrl, String displayName, String description, String iconFile, BufferedImage iconImage, String creator, String[] packRequirements, String[] modRequirements, String[] files) {
+    public ModEntry(String id, boolean enabled, String fileName, String downloadUrl, String displayName, String description, String iconFile, BufferedImage iconImage, String creator, String[] packRequirements, String[] modRequirements, String[] files, boolean hidden) {
         this.id = id;
         this.enabled = enabled;
         this.fileName = fileName;
@@ -30,6 +31,11 @@ public class ModEntry {
         this.packRequirements = packRequirements;
         this.modRequirements = modRequirements;
         this.files = files;
+        this.hidden = hidden;
+    }
+
+    public void install() {
+
     }
 
     public String getId() {
@@ -86,5 +92,9 @@ public class ModEntry {
 
     public String[] getFiles() {
         return files;
+    }
+
+    public boolean isHidden() {
+        return hidden;
     }
 }
