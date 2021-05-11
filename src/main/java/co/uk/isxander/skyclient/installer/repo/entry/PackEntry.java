@@ -11,10 +11,9 @@ public class PackEntry {
     private final String displayName;
     private final String description;
     private final String iconFile;
-    private BufferedImage iconImage;
     private final String creator;
 
-    public PackEntry(String id, boolean enabled, String fileName, String downloadUrl, String displayName, String description, String iconFile, BufferedImage iconImage, String creator) {
+    public PackEntry(String id, boolean enabled, String fileName, String downloadUrl, String displayName, String description, String iconFile, String creator) {
         this.id = id;
         this.enabled = enabled;
         this.fileName = fileName;
@@ -22,7 +21,6 @@ public class PackEntry {
         this.displayName = displayName;
         this.description = description;
         this.iconFile = iconFile;
-        this.iconImage = iconImage;
         this.creator = creator;
     }
 
@@ -56,14 +54,6 @@ public class PackEntry {
 
     public String getIconFile() {
         return iconFile;
-    }
-
-    public BufferedImage getIconImage() {
-        return iconImage;
-    }
-
-    public void setIconImage(BufferedImage img) {
-        this.iconImage = img;
     }
 
     public String getCreator() {

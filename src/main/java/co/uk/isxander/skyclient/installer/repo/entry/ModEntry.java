@@ -1,7 +1,5 @@
 package co.uk.isxander.skyclient.installer.repo.entry;
 
-import java.awt.image.BufferedImage;
-
 public class ModEntry {
 
     private final String id;
@@ -11,14 +9,14 @@ public class ModEntry {
     private final String displayName;
     private final String description;
     private final String iconFile;
-    private BufferedImage iconImage;
     private final String creator;
     private final String[] packRequirements;
     private final String[] modRequirements;
+    private final EntryAction[] actions;
     private final String[] files;
     private final boolean hidden;
 
-    public ModEntry(String id, boolean enabled, String fileName, String downloadUrl, String displayName, String description, String iconFile, BufferedImage iconImage, String creator, String[] packRequirements, String[] modRequirements, String[] files, boolean hidden) {
+    public ModEntry(String id, boolean enabled, String fileName, String downloadUrl, String displayName, String description, String iconFile, String creator, String[] packRequirements, String[] modRequirements, EntryAction[] actions, String[] files, boolean hidden) {
         this.id = id;
         this.enabled = enabled;
         this.fileName = fileName;
@@ -26,10 +24,10 @@ public class ModEntry {
         this.displayName = displayName;
         this.description = description;
         this.iconFile = iconFile;
-        this.iconImage = iconImage;
         this.creator = creator;
         this.packRequirements = packRequirements;
         this.modRequirements = modRequirements;
+        this.actions = actions;
         this.files = files;
         this.hidden = hidden;
     }
@@ -68,14 +66,6 @@ public class ModEntry {
 
     public String getIconFile() {
         return iconFile;
-    }
-
-    public BufferedImage getIconImage() {
-        return iconImage;
-    }
-
-    public void setIconImage(BufferedImage img) {
-        this.iconImage = img;
     }
 
     public String getCreator() {

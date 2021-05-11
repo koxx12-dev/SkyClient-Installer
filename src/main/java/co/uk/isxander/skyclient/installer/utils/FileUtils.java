@@ -1,5 +1,7 @@
 package co.uk.isxander.skyclient.installer.utils;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,6 +22,19 @@ public class FileUtils {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static Image getResourceImage(String resourceName) {
+        try (InputStream is = FileUtils.class.getResourceAsStream(resourceName)) {
+            if (is == null) {
+                throw new IOException("Cannot get resource \"" + resourceName + "\"");
+            }
+
+            return ImageIO.read(is);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }

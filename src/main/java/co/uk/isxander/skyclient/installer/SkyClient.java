@@ -7,6 +7,7 @@ import co.uk.isxander.skyclient.installer.repo.entry.PackEntry;
 import co.uk.isxander.skyclient.installer.utils.OSChecker;
 import co.uk.isxander.skyclient.installer.utils.UpdateHook;
 
+import javax.swing.*;
 import java.io.File;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -20,7 +21,7 @@ public class SkyClient {
     private final File mcDir;
     private final File scDir;
     private final RepositoryManager repositoryManager;
-    private final MainGui mainGui;
+    private MainGui mainGui;
 
     public SkyClient() {
         OSChecker.OSType type = OSChecker.getOperatingSystemType();
@@ -31,25 +32,14 @@ public class SkyClient {
         } else if (type == OSChecker.OSType.MacOS) {
             mcDir = new File("~/Library/Application Support/Minecraft");
         } else {
-            throw new IllegalStateException("Could not detect OS type");
+            LOGGER.severe("OS type is not supported. Cannot continue.");
+            JOptionPane.showMessageDialog(null, "Your OS type is not supported by SkyClient (Java Edition).", "Fatal Error", JOptionPane.ERROR_MESSAGE);
+            throw new IllegalStateException("OS type is not supported.");
         }
         scDir = new File(mcDir, "skyclient");
 
-        this.mainGui = null;
         this.repositoryManager = new RepositoryManager();
-        this.repositoryManager.fetchFiles(new UpdateHook() {
-            @Override
-            public void updateMod(ModEntry mod) {
-                if (mainGui != null) {
-
-                }
-            }
-
-            @Override
-            public void updatePack(PackEntry pack) {
-
-            }
-        });
+        mainGui = new MainGui(this);
     }
 
     public MainGui getMainGui() {

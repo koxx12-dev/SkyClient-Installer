@@ -1,6 +1,7 @@
 package co.uk.isxander.skyclient.installer.repo;
 
 import co.uk.isxander.skyclient.installer.SkyClient;
+import co.uk.isxander.skyclient.installer.repo.entry.EntryAction;
 import co.uk.isxander.skyclient.installer.repo.entry.ModEntry;
 import co.uk.isxander.skyclient.installer.repo.entry.PackEntry;
 import co.uk.isxander.skyclient.installer.utils.FileUtils;
@@ -17,7 +18,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class RepositoryManager {
@@ -33,12 +36,23 @@ public class RepositoryManager {
     private JsonArray mods;
     private JsonArray packs;
 
-    private List<ModEntry> modEntries;
-    private List<PackEntry> packEntries;
+    private final List<ModEntry> modEntries;
+    private final List<PackEntry> packEntries;
+
+    private final Map<String, BufferedImage> imageCache;
+    private final BufferedImage unknownImage;
 
     public RepositoryManager() {
         this.modEntries = new ArrayList<>();
         this.packEntries = new ArrayList<>();
+        this.imageCache = new HashMap<>();
+
+        try {
+            this.unknownImage = ImageIO.read(RepositoryManager.class.getResourceAsStream("unknown.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new IllegalStateException("Could not read unknown image.");
+        }
     }
 
     public void fetchFiles(UpdateHook hook) {
@@ -54,18 +68,6 @@ public class RepositoryManager {
         mods = JsonParser.parseString(HttpsUtils.getString(MODS_JSON_URL)).getAsJsonArray();
         packs = JsonParser.parseString(HttpsUtils.getString(PACKS_JSON_URL)).getAsJsonArray();
 
-        // Export unknown image if needed
-        BufferedImage unknownImg = null;
-        try {
-            File iconFile = new File(CACHE_FOLDER, "icons/unknown.png");
-            if (!iconFile.exists()) {
-                FileUtils.exportResource("unknown.png", iconFile);
-            }
-            unknownImg = ImageIO.read(iconFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         // Loop thru every element in the array
         for (JsonElement element : mods) {
             // Check if element is an object so we don't run into any weird errors
@@ -78,11 +80,11 @@ public class RepositoryManager {
             BetterJsonObject modJson = new BetterJsonObject(element.getAsJsonObject());
 
             // find all required packs and add them to array
-            int i = 0;
             String[] packs = new String[0];
             if (modJson.has("packs")) {
                 JsonArray packArray = modJson.get("packs").getAsJsonArray();
                 packs = new String[packArray.size()];
+                int i = 0;
                 for (JsonElement packIdElement : packArray) {
                     packs[i] = packIdElement.getAsString();
                     i++;
@@ -94,7 +96,7 @@ public class RepositoryManager {
             if (modJson.has("mods")) {
                 JsonArray modArray = modJson.get("mods").getAsJsonArray();
                 mods = new String[modArray.size()];
-                i = 0;
+                int i = 0;
                 for (JsonElement modIdElement : modArray) {
                     mods[i] = modIdElement.getAsString();
                     i++;
@@ -106,10 +108,26 @@ public class RepositoryManager {
             if (modJson.has("files")) {
                 JsonArray fileArray = modJson.get("files").getAsJsonArray();
                 files = new String[fileArray.size()];
-                i = 0;
+                int i = 0;
                 for (JsonElement fileIdElement : fileArray) {
                     files[i] = fileIdElement.getAsString();
                     i++;
+                }
+            }
+
+            // find all actions and add them to array
+            EntryAction[] actions = new EntryAction[0];
+            if (modJson.has("actions")) {
+                JsonArray actionsArr = modJson.get("actions").getAsJsonArray();
+                actions = new EntryAction[actionsArr.size()];
+                int i = 0;
+                for (JsonElement actionElement : actionsArr) {
+                    BetterJsonObject actionObj = new BetterJsonObject(actionElement.getAsJsonObject());
+                    if (actionObj.has("document")) {
+
+                    } else {
+
+                    }
                 }
             }
 
@@ -122,10 +140,10 @@ public class RepositoryManager {
                     modJson.optString("display"),
                     modJson.optString("description"),
                     modJson.optString("icon"),
-                    unknownImg,
                     modJson.optString("creator", "Unknown"),
                     packs,
                     mods,
+                    actions,
                     files,
                     modJson.optBoolean("hidden", false)
             ));
@@ -151,7 +169,6 @@ public class RepositoryManager {
                     packJson.optString("display"),
                     packJson.optString("description"),
                     packJson.optString("icon"),
-                    unknownImg,
                     packJson.optString("creator", "Unknown")
             ));
         }
@@ -170,7 +187,7 @@ public class RepositoryManager {
                     if (!iconFile.exists() || refresh) {
                         HttpsUtils.downloadFile(ICONS_DIR_URL + iconFileName, iconFile);
                     }
-                    mod.setIconImage(ImageIO.read(iconFile));
+                    imageCache.putIfAbsent(iconFileName, ImageIO.read(iconFile));
                 } catch (IOException e) {
                     e.printStackTrace();
                     continue;
@@ -188,7 +205,7 @@ public class RepositoryManager {
                     if (!iconFile.exists() || refresh) {
                         HttpsUtils.downloadFile(ICONS_DIR_URL + iconFileName, iconFile);
                     }
-                    pack.setIconImage(ImageIO.read(iconFile));
+                    imageCache.putIfAbsent(iconFileName, ImageIO.read(iconFile));
                 } catch (IOException e) {
                     e.printStackTrace();
                     continue;
@@ -197,6 +214,22 @@ public class RepositoryManager {
                 hook.updatePack(pack);
             }
         });
+    }
+
+    public BufferedImage getImage(String fileName) {
+        if (!imageCache.containsKey(fileName)) {
+            return unknownImage;
+        }
+
+        return imageCache.get(fileName);
+    }
+
+    public List<ModEntry> getModEntries() {
+        return modEntries;
+    }
+
+    public List<PackEntry> getPackEntries() {
+        return packEntries;
     }
 
     public boolean shouldRefreshCache() {
