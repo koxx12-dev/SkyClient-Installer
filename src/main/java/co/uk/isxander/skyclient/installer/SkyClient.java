@@ -42,6 +42,10 @@ public class SkyClient {
         mainGui = new MainGui(this);
     }
 
+    public void install() {
+
+    }
+
     public MainGui getMainGui() {
         return mainGui;
     }

@@ -1,7 +1,5 @@
 package co.uk.isxander.skyclient.installer.repo.entry;
 
-import java.awt.image.BufferedImage;
-
 public class PackEntry {
 
     private final String id;
@@ -10,18 +8,24 @@ public class PackEntry {
     private final String downloadUrl;
     private final String displayName;
     private final String description;
+    private final EntryWarning warning;
     private final String iconFile;
+    private final EntryAction[] actions;
     private final String creator;
+    private final boolean hidden;
 
-    public PackEntry(String id, boolean enabled, String fileName, String downloadUrl, String displayName, String description, String iconFile, String creator) {
+    public PackEntry(String id, boolean enabled, String fileName, String downloadUrl, String displayName, String description, EntryWarning warning, String iconFile, EntryAction[] actions, String creator, boolean hidden) {
         this.id = id;
         this.enabled = enabled;
         this.fileName = fileName;
         this.downloadUrl = downloadUrl;
         this.displayName = displayName;
         this.description = description;
+        this.warning = warning;
         this.iconFile = iconFile;
+        this.actions = actions;
         this.creator = creator;
+        this.hidden = hidden;
     }
 
     public String getId() {
@@ -52,11 +56,23 @@ public class PackEntry {
         return description;
     }
 
+    public EntryWarning getWarning() {
+        return warning;
+    }
+
     public String getIconFile() {
         return iconFile;
     }
 
     public String getCreator() {
         return creator;
+    }
+
+    public boolean isHidden() {
+        return hidden;
+    }
+
+    public EntryAction[] getActions() {
+        return actions;
     }
 }

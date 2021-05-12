@@ -13,10 +13,11 @@ public class ModEntry {
     private final String[] packRequirements;
     private final String[] modRequirements;
     private final EntryAction[] actions;
+    private final EntryWarning warnings;
     private final String[] files;
     private final boolean hidden;
 
-    public ModEntry(String id, boolean enabled, String fileName, String downloadUrl, String displayName, String description, String iconFile, String creator, String[] packRequirements, String[] modRequirements, EntryAction[] actions, String[] files, boolean hidden) {
+    public ModEntry(String id, boolean enabled, String fileName, String downloadUrl, String displayName, String description, String iconFile, String creator, String[] packRequirements, String[] modRequirements, EntryAction[] actions, EntryWarning warnings, String[] files, boolean hidden) {
         this.id = id;
         this.enabled = enabled;
         this.fileName = fileName;
@@ -28,6 +29,7 @@ public class ModEntry {
         this.packRequirements = packRequirements;
         this.modRequirements = modRequirements;
         this.actions = actions;
+        this.warnings = warnings;
         this.files = files;
         this.hidden = hidden;
     }
@@ -78,6 +80,14 @@ public class ModEntry {
 
     public String[] getModRequirements() {
         return modRequirements;
+    }
+
+    public EntryAction[] getActions() {
+        return actions;
+    }
+
+    public EntryWarning getWarning() {
+        return warnings;
     }
 
     public String[] getFiles() {

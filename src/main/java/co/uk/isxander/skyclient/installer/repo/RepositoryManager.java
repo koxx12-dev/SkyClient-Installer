@@ -2,6 +2,7 @@ package co.uk.isxander.skyclient.installer.repo;
 
 import co.uk.isxander.skyclient.installer.SkyClient;
 import co.uk.isxander.skyclient.installer.repo.entry.EntryAction;
+import co.uk.isxander.skyclient.installer.repo.entry.EntryWarning;
 import co.uk.isxander.skyclient.installer.repo.entry.ModEntry;
 import co.uk.isxander.skyclient.installer.repo.entry.PackEntry;
 import co.uk.isxander.skyclient.installer.utils.FileUtils;
@@ -119,16 +120,32 @@ public class RepositoryManager {
             EntryAction[] actions = new EntryAction[0];
             if (modJson.has("actions")) {
                 JsonArray actionsArr = modJson.get("actions").getAsJsonArray();
-                actions = new EntryAction[actionsArr.size()];
-                int i = 0;
+                List<EntryAction> actionList = new ArrayList<>(actionsArr.size());
                 for (JsonElement actionElement : actionsArr) {
                     BetterJsonObject actionObj = new BetterJsonObject(actionElement.getAsJsonObject());
                     if (actionObj.has("document")) {
-
+                        // do later
                     } else {
-
+                        actionList.add(new EntryAction(
+                                actionObj.optString("icon"),
+                                actionObj.optString("text"),
+                                actionObj.optString("creator"),
+                                actionObj.optString("link")
+                        ));
                     }
                 }
+                actions = actionList.toArray(new EntryAction[0]);
+            }
+
+            // find warning
+            EntryWarning warning = null;
+            if (modJson.has("warning")) {
+                JsonArray lineArr = modJson.get("warning").getAsJsonObject().get("lines").getAsJsonArray();
+                List<String> lineList = new ArrayList<>();
+                for (JsonElement lineElement : lineArr) {
+                    lineList.add(lineElement.getAsString());
+                }
+                warning = new EntryWarning(lineList);
             }
 
             // finally create the entry
@@ -144,6 +161,7 @@ public class RepositoryManager {
                     packs,
                     mods,
                     actions,
+                    warning,
                     files,
                     modJson.optBoolean("hidden", false)
             ));
@@ -160,6 +178,38 @@ public class RepositoryManager {
             // Convert element into object
             BetterJsonObject packJson = new BetterJsonObject(element.getAsJsonObject());
 
+            // find all actions and add them to array
+            EntryAction[] actions = new EntryAction[0];
+            if (packJson.has("actions")) {
+                JsonArray actionsArr = packJson.get("actions").getAsJsonArray();
+                List<EntryAction> actionList = new ArrayList<>(actionsArr.size());
+                for (JsonElement actionElement : actionsArr) {
+                    BetterJsonObject actionObj = new BetterJsonObject(actionElement.getAsJsonObject());
+                    if (actionObj.has("document")) {
+                        // do later
+                    } else {
+                        actionList.add(new EntryAction(
+                                actionObj.optString("icon"),
+                                actionObj.optString("text"),
+                                actionObj.optString("creator"),
+                                actionObj.optString("link")
+                        ));
+                    }
+                }
+                actions = actionList.toArray(new EntryAction[0]);
+            }
+
+            // find warning
+            EntryWarning warning = null;
+            if (packJson.has("warning")) {
+                JsonArray lineArr = packJson.get("warning").getAsJsonObject().get("lines").getAsJsonArray();
+                List<String> lineList = new ArrayList<>();
+                for (JsonElement lineElement : lineArr) {
+                    lineList.add(lineElement.getAsString());
+                }
+                warning = new EntryWarning(lineList);
+            }
+
             // finally add pack entry
             packEntries.add(new PackEntry(
                     packJson.optString("id"),
@@ -168,8 +218,11 @@ public class RepositoryManager {
                     packJson.optString("url"),
                     packJson.optString("display"),
                     packJson.optString("description"),
+                    warning,
                     packJson.optString("icon"),
-                    packJson.optString("creator", "Unknown")
+                    actions,
+                    packJson.optString("creator", "Unknown"),
+                    packJson.optBoolean("hidden", false)
             ));
         }
 
