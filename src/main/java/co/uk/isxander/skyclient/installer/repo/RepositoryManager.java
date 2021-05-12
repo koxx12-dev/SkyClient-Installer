@@ -49,7 +49,7 @@ public class RepositoryManager {
         this.imageCache = new HashMap<>();
 
         try {
-            this.unknownImage = ImageIO.read(RepositoryManager.class.getResourceAsStream("unknown.png"));
+            this.unknownImage = ImageIO.read(RepositoryManager.class.getResourceAsStream("/unknown.png"));
         } catch (IOException e) {
             e.printStackTrace();
             throw new IllegalStateException("Could not read unknown image.");

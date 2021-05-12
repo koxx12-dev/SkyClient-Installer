@@ -12,7 +12,7 @@ public class Main {
         PrintStream fileOut = new PrintStream("./skyclient.log");
         System.setOut(fileOut);
 
-        SkyClient.LOGGER.info("Setting Look and Feel...");
+        //SkyClient.LOGGER.info("Setting Look and Feel...");
         try {
             UIManager.setLookAndFeel(new FlatDarkLaf());
         } catch (Exception e) {

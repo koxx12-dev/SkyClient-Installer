@@ -18,15 +18,15 @@ public class SkyClient {
 
     private static SkyClient instance;
 
-    private final File mcDir;
-    private final File scDir;
+    private File mcDir;
+    private String scPath;
     private final RepositoryManager repositoryManager;
     private MainGui mainGui;
 
     public SkyClient() {
         OSChecker.OSType type = OSChecker.getOperatingSystemType();
         if (type == OSChecker.OSType.Windows) {
-            mcDir = new File(new File(System.getProperty("APPDATA")), ".minecraft");
+            mcDir = new File(new File(System.getenv("APPDATA")), ".minecraft");
         } else if (type == OSChecker.OSType.Linux) {
             mcDir = new File("~/.minecraft");
         } else if (type == OSChecker.OSType.MacOS) {
@@ -36,7 +36,7 @@ public class SkyClient {
             JOptionPane.showMessageDialog(null, "Your OS type is not supported by SkyClient (Java Edition).", "Fatal Error", JOptionPane.ERROR_MESSAGE);
             throw new IllegalStateException("OS type is not supported.");
         }
-        scDir = new File(mcDir, "skyclient");
+        scPath = "skyclient";
 
         this.repositoryManager = new RepositoryManager();
         mainGui = new MainGui(this);
@@ -46,16 +46,20 @@ public class SkyClient {
 
     }
 
+    public void setMcDir(File newMc) {
+        this.mcDir = newMc;
+    }
+
+    public File getScDir() {
+        return new File(mcDir, scPath);
+    }
+
     public MainGui getMainGui() {
         return mainGui;
     }
 
     public File getMcDir() {
         return mcDir;
-    }
-
-    public File getScDir() {
-        return scDir;
     }
 
     public RepositoryManager getRepositoryManager() {

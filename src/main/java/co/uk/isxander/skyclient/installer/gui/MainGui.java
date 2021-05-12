@@ -43,7 +43,7 @@ public class MainGui {
             }
         });
 
-        Image icon = FileUtils.getResourceImage("skyclient.png");
+        Image icon = FileUtils.getResourceImage("/skyclient.png");
 
         JFrame frame = new JFrame("SkyClient Installer (Java Edition)");
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -136,15 +136,23 @@ public class MainGui {
             constraints.gridy = i;
             gridBag.setConstraints(checkBox, constraints);
             packPane.add(checkBox);
-
             JButton actionButton = new JButton("^");
             actionButton.setName(pack.getId());
-            actionButton.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    genPopup(pack.getActions()).show(e.getComponent(), e.getX(), e.getY());
-                }
-            });
+            if (pack.getActions().length > 0) {
+                actionButton.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        genPopup(pack.getActions()).show(e.getComponent(), e.getX(), e.getY());
+                    }
+                });
+            } else {
+                actionButton.setOpaque(false);
+                actionButton.setContentAreaFilled(false);
+                actionButton.setBorderPainted(false);
+                actionButton.setText("");
+                actionButton.setEnabled(false);
+            }
+
             constraints.gridx = 2;
             constraints.gridy = i;
             gridBag.setConstraints(actionButton, constraints);
@@ -152,6 +160,94 @@ public class MainGui {
 
             i++;
         }
+
+        JButton installButton = new JButton("Install");
+        installButton.addActionListener((action) -> {
+            sc.install();
+        });
+        installButton.setPreferredSize(new Dimension(200, 30));
+        constraints.insets = new Insets(1, 1, 1, 3);
+        constraints.gridwidth = 4;
+        constraints.gridx = 0;
+        constraints.gridy = 2;
+        gridBag.setConstraints(installButton, constraints);
+        container.add(installButton);
+
+        JLabel pathDisplayLabel = new JLabel(sc.getScDir().getAbsolutePath());
+        pathDisplayLabel.setPreferredSize(new Dimension(150, 30));
+        constraints.insets = new Insets(1, 1, 1, 3);
+        constraints.gridwidth = 3;
+        constraints.gridx = 0;
+        constraints.gridy = 3;
+        gridBag.setConstraints(pathDisplayLabel, constraints);
+        container.add(pathDisplayLabel);
+
+        JButton pathButton = new JButton("Select Path");
+        pathButton.addActionListener((action) -> {
+            JFrame pathFrame = new JFrame("Select Path");
+            pathFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+            pathFrame.setIconImage(FileUtils.getResourceImage("/skyclient.png"));
+            pathFrame.setResizable(false);
+
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.addActionListener((listener) -> {
+                if (listener.getActionCommand().equals(JFileChooser.APPROVE_SELECTION)) {
+                    sc.setMcDir(fileChooser.getSelectedFile());
+                    pathDisplayLabel.setText(sc.getMcDir().getAbsolutePath());
+                } else if (listener.getActionCommand().equals(JFileChooser.CANCEL_SELECTION)) {
+                    pathFrame.dispose();
+                }
+            });
+            fileChooser.setCurrentDirectory(sc.getMcDir());
+            fileChooser.setDialogTitle("Select Minecraft Data Folder");
+            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            fileChooser.setAcceptAllFileFilterUsed(false);
+
+            pathFrame.add(fileChooser);
+            pathFrame.pack();
+            pathFrame.setVisible(true);
+        });
+        pathButton.setPreferredSize(new Dimension(50, 30));
+        constraints.insets = new Insets(1, 1, 1, 3);
+        constraints.gridwidth = 1;
+        constraints.gridx = 3;
+        constraints.gridy = 3;
+        gridBag.setConstraints(pathButton, constraints);
+        container.add(pathButton);
+
+        JLabel modLabel = new JLabel("Mods", SwingConstants.CENTER);
+        modLabel.setPreferredSize(new Dimension(200, 30));
+        constraints.gridwidth = 2;
+        constraints.gridx = 0;
+        constraints.gridy = 0;
+        gridBag.setConstraints(modLabel, constraints);
+        container.add(modLabel);
+
+        JScrollPane modScrollPane = new JScrollPane(modPane, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        modScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        modScrollPane.setPreferredSize(new Dimension(370, 500));
+        constraints.gridwidth = 2;
+        constraints.gridx = 0;
+        constraints.gridy = 1;
+        gridBag.setConstraints(modScrollPane, constraints);
+        container.add(modScrollPane);
+
+        JLabel packLabel = new JLabel("Packs", SwingConstants.CENTER);
+        packLabel.setPreferredSize(new Dimension(200, 30));
+        constraints.gridwidth = 2;
+        constraints.gridx = 2;
+        constraints.gridy = 0;
+        gridBag.setConstraints(packLabel, constraints);
+        container.add(packLabel);
+
+        JScrollPane packScrollPane = new JScrollPane(packPane, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        packScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        packScrollPane.setPreferredSize(new Dimension(370, 500));
+        constraints.gridwidth = 2;
+        constraints.gridx = 2;
+        constraints.gridy = 1;
+        gridBag.setConstraints(packScrollPane, constraints);
+        container.add(packScrollPane);
 
         frame.pack();
         frame.setVisible(true);

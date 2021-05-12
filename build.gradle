@@ -26,6 +26,6 @@ dependencies {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'io.github.koxx12dev.skyclient.installer.Main'
+        attributes 'Main-Class': 'co.uk.isxander.skyclient.installer.start.Main'
     }
 }
